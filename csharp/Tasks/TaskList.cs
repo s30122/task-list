@@ -4,6 +4,16 @@ using System.Linq;
 
 namespace Tasks
 {
+	public class ExecuteCommand
+	{
+		public ExecuteCommand(string commandLine)
+		{
+			CommandLine = commandLine;
+		}
+
+		public string CommandLine { get; private set; }
+	}
+
 	public sealed class TaskList
 	{
 		private const string QUIT = "quit";
@@ -31,13 +41,13 @@ namespace Tasks
 				if (command == QUIT) {
 					break;
 				}
-				Execute(command);
+				Execute(new ExecuteCommand(command));
 			}
 		}
 
-		private void Execute(string commandLine)
+		private void Execute(ExecuteCommand executeCommand)
 		{
-			var commandRest = commandLine.Split(" ".ToCharArray(), 2);
+			var commandRest = executeCommand.CommandLine.Split(" ".ToCharArray(), 2);
 			var command = commandRest[0];
 			switch (command) {
 			case "show":
