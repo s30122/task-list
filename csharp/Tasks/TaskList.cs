@@ -4,6 +4,27 @@ using System.Linq;
 
 namespace Tasks
 {
+    public class ExecuteContent
+    {
+        public ExecuteContent(string commandLine)
+        {
+            var split  =commandLine.Split(" ".ToCharArray(), 2);
+            ExecuteType = ConvertToExecuteType(split[0]);
+            Content = split[1];
+        }
+
+        private ExecuteTypeEnum ConvertToExecuteType(string s)
+        {
+            return Enum.Parse<ExecuteTypeEnum>(s, true);
+        }
+
+        public string Content { get; set; }
+
+        public ExecuteTypeEnum ExecuteType { get; set; }
+
+        public string CommandLine { get; private set; }
+    }
+
     public sealed class TaskList
     {
         private const string QUIT = "quit";
@@ -46,7 +67,7 @@ namespace Tasks
                     Show();
                     break;
                 case ActionTypeEnum.Add:
-                    Add(executeCommand.Command);
+                    Add(new ExecuteContent(executeCommand.Command));
                     break;
                 case ActionTypeEnum.Check:
                     Check(executeCommand.Command);
@@ -77,9 +98,9 @@ namespace Tasks
             }
         }
 
-        private void Add(string commandLine)
+        private void Add(ExecuteContent executeContent)
         {
-            var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var subcommandRest = executeContent.CommandLine.Split(" ".ToCharArray(), 2);
             var subcommand = subcommandRest[0];
             if (subcommand == "project")
             {
