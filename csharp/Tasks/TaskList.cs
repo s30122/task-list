@@ -4,143 +4,175 @@ using System.Linq;
 
 namespace Tasks
 {
-	public sealed class TaskList
-	{
-		private const string Quit = "quit";
+    public sealed class TaskList
+    {
+        private const string Quit = "quit";
 
-		private readonly IDictionary<string, IList<Task>> _tasks = new Dictionary<string, IList<Task>>();
-		private readonly IConsole _console;
+        private readonly IDictionary<string, IList<Task>> _tasks = new Dictionary<string, IList<Task>>();
+        private readonly IConsole _console;
 
-		private long _lastId;
+        private long _lastId;
 
-		public static void Main(string[] args)
-		{
-			new TaskList(new RealConsole()).Run();
-		}
+        public static void Main(string[] args)
+        {
+            new TaskList(new RealConsole()).Run();
+        }
 
-		public TaskList(IConsole console)
-		{
-			_console = console;
-		}
+        public TaskList(IConsole console)
+        {
+            _console = console;
+        }
 
-		public void Run()
-		{
-			while (true) {
-				_console.Write("> ");
-				var command = _console.ReadLine();
-				if (command == Quit) {
-					break;
-				}
-				Execute(new ExecuteCommand(command));
-			}
-		}
+        public void Run()
+        {
+            while (true)
+            {
+                _console.Write("> ");
+                var command = _console.ReadLine();
 
-		private void Execute(ExecuteCommand executeCommand)
-		{
-			switch (executeCommand.Action) {
-			case "show":
-				Show();
-				break;
-			case "add":
-				Add(executeCommand.RestCommand);
-				break;
-			case "check":
-				Check(executeCommand.RestCommand);
-				break;
-			case "uncheck":
-				Uncheck(executeCommand.RestCommand);
-				break;
-			case "help":
-				Help();
-				break;
-			default:
-				Error(executeCommand.Action);
-				break;
-			}
-		}
+                if (command == Quit)
+                {
+                    break;
+                }
 
-		private void Show()
-		{
-			foreach (var project in _tasks) {
-				_console.WriteLine(project.Key);
-				foreach (var task in project.Value) {
-					_console.WriteLine("    [{0}] {1}: {2}", task.Done ? 'x' : ' ', task.Id, task.Description);
-				}
-				_console.WriteLine();
-			}
-		}
+                Execute(new ExecuteCommand(command));
+            }
+        }
 
-		private void Add(string commandLine)
-		{
-			var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
-			var subcommand = subcommandRest[0];
-			if (subcommand == "project") {
-				AddProject(subcommandRest[1]);
-			} else if (subcommand == "task") {
-				var projectTask = subcommandRest[1].Split(" ".ToCharArray(), 2);
-				AddTask(projectTask[0], projectTask[1]);
-			}
-		}
+        private void Execute(ExecuteCommand executeCommand)
+        {
+            switch (executeCommand.Action)
+            {
+                case "show":
+                    Show();
 
-		private void AddProject(string name)
-		{
-			_tasks[name] = new List<Task>();
-		}
+                    break;
 
-		private void AddTask(string project, string description)
-		{
-			if (!_tasks.TryGetValue(project, out IList<Task> projectTasks))
-			{
-				Console.WriteLine("Could not find a project with the name \"{0}\".", project);
-				return;
-			}
-			projectTasks.Add(new Task { Id = NextId(), Description = description, Done = false });
-		}
+                case "add":
+                    Add(new AddCommand(executeCommand.RestCommand));
 
-		private void Check(string idString)
-		{
-			SetDone(idString, true);
-		}
+                    break;
 
-		private void Uncheck(string idString)
-		{
-			SetDone(idString, false);
-		}
+                case "check":
+                    Check(executeCommand.RestCommand);
 
-		private void SetDone(string idString, bool done)
-		{
-			int id = int.Parse(idString);
-			var identifiedTask = _tasks
-				.Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-				.Where(task => task != null)
-				.FirstOrDefault();
-			if (identifiedTask == null) {
-				_console.WriteLine("Could not find a task with an ID of {0}.", id);
-				return;
-			}
+                    break;
 
-			identifiedTask.Done = done;
-		}
+                case "uncheck":
+                    Uncheck(executeCommand.RestCommand);
 
-		private void Help()
-		{
-			_console.WriteLine("Commands:");
-			_console.WriteLine("  show");
-			_console.WriteLine("  add project <project name>");
-			_console.WriteLine("  add task <project name> <task description>");
-			_console.WriteLine("  check <task ID>");
-			_console.WriteLine("  uncheck <task ID>");
-			_console.WriteLine();
-		}
+                    break;
 
-		private void Error(string command)
-		{
-			_console.WriteLine("I don't know what the command \"{0}\" is.", command);
-		}
+                case "help":
+                    Help();
 
-		private long NextId()
-		{
-			return ++_lastId;
-		}
-	}
+                    break;
+
+                default:
+                    Error(executeCommand.Action);
+
+                    break;
+            }
+        }
+
+        private void Show()
+        {
+            foreach (var project in _tasks)
+            {
+                _console.WriteLine(project.Key);
+
+                foreach (var task in project.Value)
+                {
+                    _console.WriteLine("    [{0}] {1}: {2}", task.Done ? 'x' : ' ', task.Id, task.Description);
+                }
+
+                _console.WriteLine();
+            }
+        }
+
+        private void Add(AddCommand addCommand)
+        {
+            if (addCommand.ActionIsProject())
+            {
+                var project = new Project(addCommand.Content);
+                AddProject(project);
+            }
+            else if (addCommand.ActionIsTask())
+            {
+                var projectTask = new AddTaskCommand(addCommand.Content);
+                AddTask(projectTask.ProjectName, projectTask.Description);
+            }
+        }
+
+        private void AddProject(Project project)
+        {
+            _tasks[project.Name] = new List<Task>();
+        }
+
+        private void AddTask(string project, string description)
+        {
+            if (!_tasks.TryGetValue(project, out IList<Task> projectTasks))
+            {
+                Console.WriteLine("Could not find a project with the name \"{0}\".", project);
+
+                return;
+            }
+
+            projectTasks.Add(new Task
+            {
+                Id = NextId(),
+                Description = description,
+                Done = false
+            });
+        }
+
+        private void Check(string idString)
+        {
+            SetDone(idString, true);
+        }
+
+        private void Uncheck(string idString)
+        {
+            SetDone(idString, false);
+        }
+
+        private void SetDone(string idString, bool done)
+        {
+            int id = int.Parse(idString);
+
+            var identifiedTask = _tasks
+                                 .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
+                                 .FirstOrDefault(task => task != null);
+
+            if (identifiedTask == null)
+            {
+                _console.WriteLine("Could not find a task with an ID of {0}.", id);
+
+                return;
+            }
+
+            identifiedTask.Done = done;
+        }
+
+        private void Help()
+        {
+            _console.WriteLine("Commands:");
+            _console.WriteLine("  show");
+            _console.WriteLine("  add project <project name>");
+            _console.WriteLine("  add task <project name> <task description>");
+            _console.WriteLine("  check <task ID>");
+            _console.WriteLine("  uncheck <task ID>");
+            _console.WriteLine();
+        }
+
+        private void Error(string command)
+        {
+            _console.WriteLine("I don't know what the command \"{0}\" is.", command);
+        }
+
+        private long NextId()
+        {
+            return ++_lastId;
+        }
+    }
 }
