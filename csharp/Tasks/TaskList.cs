@@ -6,12 +6,12 @@ namespace Tasks
 {
 	public sealed class TaskList
 	{
-		private const string QUIT = "quit";
+		private const string Quit = "quit";
 
-		private readonly IDictionary<string, IList<Task>> tasks = new Dictionary<string, IList<Task>>();
-		private readonly IConsole console;
+		private readonly IDictionary<string, IList<Task>> _tasks = new Dictionary<string, IList<Task>>();
+		private readonly IConsole _console;
 
-		private long lastId = 0;
+		private long _lastId;
 
 		public static void Main(string[] args)
 		{
@@ -20,15 +20,15 @@ namespace Tasks
 
 		public TaskList(IConsole console)
 		{
-			this.console = console;
+			_console = console;
 		}
 
 		public void Run()
 		{
 			while (true) {
-				console.Write("> ");
-				var command = console.ReadLine();
-				if (command == QUIT) {
+				_console.Write("> ");
+				var command = _console.ReadLine();
+				if (command == Quit) {
 					break;
 				}
 				Execute(new ExecuteCommand(command));
@@ -61,12 +61,12 @@ namespace Tasks
 
 		private void Show()
 		{
-			foreach (var project in tasks) {
-				console.WriteLine(project.Key);
+			foreach (var project in _tasks) {
+				_console.WriteLine(project.Key);
 				foreach (var task in project.Value) {
-					console.WriteLine("    [{0}] {1}: {2}", (task.Done ? 'x' : ' '), task.Id, task.Description);
+					_console.WriteLine("    [{0}] {1}: {2}", task.Done ? 'x' : ' ', task.Id, task.Description);
 				}
-				console.WriteLine();
+				_console.WriteLine();
 			}
 		}
 
@@ -84,12 +84,12 @@ namespace Tasks
 
 		private void AddProject(string name)
 		{
-			tasks[name] = new List<Task>();
+			_tasks[name] = new List<Task>();
 		}
 
 		private void AddTask(string project, string description)
 		{
-			if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
+			if (!_tasks.TryGetValue(project, out IList<Task> projectTasks))
 			{
 				Console.WriteLine("Could not find a project with the name \"{0}\".", project);
 				return;
@@ -110,12 +110,12 @@ namespace Tasks
 		private void SetDone(string idString, bool done)
 		{
 			int id = int.Parse(idString);
-			var identifiedTask = tasks
+			var identifiedTask = _tasks
 				.Select(project => project.Value.FirstOrDefault(task => task.Id == id))
 				.Where(task => task != null)
 				.FirstOrDefault();
 			if (identifiedTask == null) {
-				console.WriteLine("Could not find a task with an ID of {0}.", id);
+				_console.WriteLine("Could not find a task with an ID of {0}.", id);
 				return;
 			}
 
@@ -124,23 +124,23 @@ namespace Tasks
 
 		private void Help()
 		{
-			console.WriteLine("Commands:");
-			console.WriteLine("  show");
-			console.WriteLine("  add project <project name>");
-			console.WriteLine("  add task <project name> <task description>");
-			console.WriteLine("  check <task ID>");
-			console.WriteLine("  uncheck <task ID>");
-			console.WriteLine();
+			_console.WriteLine("Commands:");
+			_console.WriteLine("  show");
+			_console.WriteLine("  add project <project name>");
+			_console.WriteLine("  add task <project name> <task description>");
+			_console.WriteLine("  check <task ID>");
+			_console.WriteLine("  uncheck <task ID>");
+			_console.WriteLine();
 		}
 
 		private void Error(string command)
 		{
-			console.WriteLine("I don't know what the command \"{0}\" is.", command);
+			_console.WriteLine("I don't know what the command \"{0}\" is.", command);
 		}
 
 		private long NextId()
 		{
-			return ++lastId;
+			return ++_lastId;
 		}
 	}
 }
