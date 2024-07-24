@@ -128,30 +128,28 @@ namespace Tasks
 
         private void Check(string idString)
         {
-            SetDone(idString, true);
+            SetDone(new CheckCommand(idString, true));
         }
 
         private void Uncheck(string idString)
         {
-            SetDone(idString, false);
+            SetDone(new CheckCommand(idString, false));
         }
 
-        private void SetDone(string idString, bool done)
+        private void SetDone(CheckCommand checkCommand)
         {
-            int id = int.Parse(idString);
-
             var identifiedTask = _tasks
-                                 .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-                                 .FirstOrDefault(task => task != null);
+                                 .SelectMany(x => x.Value)
+                                 .FirstOrDefault(x => x.Id == checkCommand.Id);
 
             if (identifiedTask == null)
             {
-                _console.WriteLine("Could not find a task with an ID of {0}.", id);
+                _console.WriteLine("Could not find a task with an ID of {0}.", checkCommand.Id);
 
                 return;
             }
 
-            identifiedTask.Done = done;
+            identifiedTask.Done = checkCommand.Done;
         }
 
         private void Help()
