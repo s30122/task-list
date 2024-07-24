@@ -31,32 +31,30 @@ namespace Tasks
 				if (command == QUIT) {
 					break;
 				}
-				Execute(command);
+				Execute(new ExecuteCommand(command));
 			}
 		}
 
-		private void Execute(string commandLine)
+		private void Execute(ExecuteCommand executeCommand)
 		{
-			var commandRest = commandLine.Split(" ".ToCharArray(), 2);
-			var command = commandRest[0];
-			switch (command) {
+			switch (executeCommand.Action) {
 			case "show":
 				Show();
 				break;
 			case "add":
-				Add(commandRest[1]);
+				Add(executeCommand.RestCommand);
 				break;
 			case "check":
-				Check(commandRest[1]);
+				Check(executeCommand.RestCommand);
 				break;
 			case "uncheck":
-				Uncheck(commandRest[1]);
+				Uncheck(executeCommand.RestCommand);
 				break;
 			case "help":
 				Help();
 				break;
 			default:
-				Error(command);
+				Error(executeCommand.Action);
 				break;
 			}
 		}
